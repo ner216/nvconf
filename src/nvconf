@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+
+# This script is used to interact with the bbswitch kernel module
+
+import os
+import argparse
+
+# Get user running script
+SUDOER = os.environ.get('SUDO_USER')
+USER = os.getlogin()
+
+# Exit if user not sudo
+if not SUDOER or USER == "root":
+    print("Script must be run as root")
+    exit()
+
+# OPTIONS
+DEFAULT_POWER_STATE = "off"     # Change this to "on" if you would like the nvidia gpu to be on at boot.
+
+
+def nv_power(state: bool) -> None:
+    # commands to turn on/off the gpu now
+    nv_off_command = "echo OFF > /proc/acpi/bbswitch"
+    nv_on_command = "echo ON > /proc/acpi/bbswitch"
+    # commands to turn on/off the gpu at boot
+    nv_off_recur_command = "echo 'options bbswitch load_state=0' > /etc/modprobe.d/bbswitch.conf"
+    nv_on_recur_command = "echo 'options bbswitch load_state=1' > /etc/modprobe.d/bbswitch.conf"
+
+    try:
+        if state == True:
+            os.system(nv_on_command)
+            os.system(nv_on_recur_command)
+        elif state == False:
+            os.system(nv_off_command)
+            os.system(nv_off_recur_command)
+        else:
+            print("ERROR: invalid parameter sent to nv_power function!")
+            exit()
+    except Exception as e:
+        print(f"ERROR: Unable to execute bbswitch command!\n Error: {e}")
+        exit()
+
+def nv_status() -> None:
+    try:
+        os.system("cat /proc/acpi/bbswitch")
+    except Exception as e:
+        print(f"ERROR: Unable to read bbswitch status!\n Error: {e}")
+        exit()
+
+def setup_bbswitch() -> None:
+    if DEFAULT_POWER_STATE == "off":
+        set_config_command = "echo 'options bbswitch load_state=0' > /etc/modprobe.d/bbswitch.conf"
+    elif DEFAULT_POWER_STATE == "on":
+        set_config_command = "echo 'options bbswitch load_state=1' > /etc/modprobe.d/bbswitch.conf"
+
+    bbswitch_install_command = "echo bbswitch > /etc/modules-load.d/bbswitch.conf"
+    update_init_ubuntu_command = "update-initramfs -u"
+
+    # Run commands
+    try:
+        print("CREATE: create bbswitch config to /etc/modprobe.d/ ...")
+        os.system(set_config_command)
+        print("CREATE: make bbswitch file in /etc/modules-load.d/bbswich to load at boot ...")
+        os.system(bbswitch_install_command)
+        print("UPDATE: update initramfs...")
+        os.system(update_init_ubuntu_command)
+        print("DONE")
+    except Exception as e:
+        print(f"ERROR: Unable to execute commands to enable bbswitch!\n Error: {e}")
+
+
+def main():
+    #Variables
+    flags = []
+    true_flags = 0
+
+    # Set up parser module with command args
+    parser = argparse.ArgumentParser(description="nvconf script")
+
+    parser.add_argument("--on", action="store_true", help="Turn on the Nvidia GPU")
+    parser.add_argument("--off", action="store_true", help="Turn off the Nvidia GPU")
+    parser.add_argument("--setup", action="store_true", help="Setup the bbswitch module to enable at boot")
+    parser.add_argument("--status", action="store_true", help="Show if nvidia gpu is on or off")
+    
+    args = parser.parse_args()
+    flags = [args.on, args.off, args.setup, args.status]
+    true_flags = sum(flags)
+
+    if true_flags == 1:
+        if args.on == True:
+            nv_power(True)
+        elif args.off == True:
+            nv_power(False)
+        elif args.setup == True:
+            setup_bbswitch()
+        elif args.status == True:
+            nv_status()
+    else:
+        print("Too many arguments given to bbconf!")
+        exit()
+    
+
+main()
