@@ -4,6 +4,11 @@
 
 import os
 import argparse
+import subprocess
+import time
+
+# Global variables
+UPDATE_INITRAMFS_COMMAND = "update-initramfs -u"
 
 # Get user running script
 SUDOER = os.environ.get('SUDO_USER')
@@ -30,9 +35,11 @@ def nv_power(state: bool) -> None:
         if state == True:
             os.system(nv_on_command)
             os.system(nv_on_recur_command)
+            os.system(UPDATE_INITRAMFS_COMMAND)
         elif state == False:
             os.system(nv_off_command)
             os.system(nv_off_recur_command)
+            os.system(UPDATE_INITRAMFS_COMMAND)
         else:
             print("ERROR: invalid parameter sent to nv_power function!")
             exit()
@@ -54,7 +61,26 @@ def setup_bbswitch() -> None:
         set_config_command = "echo 'options bbswitch load_state=1' > /etc/modprobe.d/bbswitch.conf"
 
     bbswitch_install_command = "echo bbswitch > /etc/modules-load.d/bbswitch.conf"
-    update_init_ubuntu_command = "update-initramfs -u"
+
+    # Check if bbswitch is installed
+    result = subprocess.run(
+        "which bbswitch",
+        shell=True,
+        capture_output=True,
+        text=True,
+        check=False
+    )
+
+    return_code = result.returncode
+    if return_code != 0:
+        try:
+            print("Installing bbswitch in 3 seconds... CTRL+C to cancel")
+            time.sleep(3)
+            os.system("apt update")
+            os.system("apt install bbswitch-dkms")
+        except Exception as e:
+            print(f"ERROR: Unable to install bbswitch!\n Error: {e}")
+            exit()
 
     # Run commands
     try:
@@ -63,7 +89,7 @@ def setup_bbswitch() -> None:
         print("CREATE: make bbswitch file in /etc/modules-load.d/bbswich to load at boot ...")
         os.system(bbswitch_install_command)
         print("UPDATE: update initramfs...")
-        os.system(update_init_ubuntu_command)
+        os.system(UPDATE_INITRAMFS_COMMAND)
         print("DONE")
     except Exception as e:
         print(f"ERROR: Unable to execute commands to enable bbswitch!\n Error: {e}")
