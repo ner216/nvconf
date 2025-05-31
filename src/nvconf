@@ -103,7 +103,6 @@ def setup_bbswitch() -> None:
             os.system("prime-select intel")
         elif DEFAULT_POWER_STATE == "on":
             os.system("prime-select nvidia")
-        print("DONE")
     except Exception as e:
         print(f"ERROR: Unable to execute commands to enable bbswitch!\n Error: {e}")
 
