@@ -56,7 +56,10 @@ def nv_power(state: bool) -> None:
 
 def nv_status() -> None:
     try:
+        print("bbswitch Nvidia GPU power state:")
         os.system("cat /proc/acpi/bbswitch")
+        print("Nvidia prime-select status:")
+        os.system("prime-select query")
     except Exception as e:
         print(f"ERROR: Unable to read bbswitch status!\n Error: {e}")
         exit()
