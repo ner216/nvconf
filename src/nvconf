@@ -20,24 +20,31 @@ if not SUDOER or USER == "root":
     exit()
 
 # OPTIONS
-DEFAULT_POWER_STATE = "off"     # Change this to "on" if you would like the nvidia gpu to be on at boot.
+DEFAULT_POWER_STATE = "off"     # Change this to "on" if you would like the nvidia gpu to be on at boot after setup.
 
 
 def nv_power(state: bool) -> None:
     # commands to turn on/off the gpu now (Not currently used)
     # nv_off_command = "echo OFF > /proc/acpi/bbswitch"
     # nv_on_command = "echo ON > /proc/acpi/bbswitch"
+    # Commands to use nvidia-prime to switch profiles (must be switched for bbswitch to work)
+    prime_select_nvidia = "prime-select nvidia"
+    prime_select_intel = "prime-select intel"
     # commands to turn on/off the gpu at boot
     nv_off_recur_command = "echo 'options bbswitch load_state=0' > /etc/modprobe.d/bbswitch.conf"
     nv_on_recur_command = "echo 'options bbswitch load_state=1' > /etc/modprobe.d/bbswitch.conf"
 
     try:
         if state == True:
+            print(" -> Setting bbswitch ...")
             os.system(nv_on_recur_command)
-            os.system(UPDATE_INITRAMFS_COMMAND)
+            print(" -> Running prime-select nvidia ...")
+            os.system(prime_select_nvidia)
         elif state == False:
+            print(" -> Setting bbswitch ...")
             os.system(nv_off_recur_command)
-            os.system(UPDATE_INITRAMFS_COMMAND)
+            print(" -> Running prime-select intel ...")
+            os.system(prime_select_intel)
         else:
             print("ERROR: invalid parameter sent to nv_power function!")
             exit()
@@ -53,6 +60,7 @@ def nv_status() -> None:
     except Exception as e:
         print(f"ERROR: Unable to read bbswitch status!\n Error: {e}")
         exit()
+
 
 def setup_bbswitch() -> None:
     if DEFAULT_POWER_STATE == "off":
@@ -85,15 +93,20 @@ def setup_bbswitch() -> None:
 
     # Run commands
     try:
+        print(f"Variable -> DEFAULT_POWER_STATE == {DEFAULT_POWER_STATE}")
         print("CREATE: create bbswitch config to /etc/modprobe.d/bbswitch.conf ...")
         os.system(set_config_command)
         print("CREATE: make bbswitch file in /etc/modules-load.d/bbswich to load at boot ...")
         os.system(bbswitch_install_command)
-        print("UPDATE: update initramfs...")
-        os.system(UPDATE_INITRAMFS_COMMAND)
+        print("UPDATE: set prime-select ...")
+        if DEFAULT_POWER_STATE == "off":
+            os.system("prime-select intel")
+        elif DEFAULT_POWER_STATE == "on":
+            os.system("prime-select nvidia")
         print("DONE")
     except Exception as e:
         print(f"ERROR: Unable to execute commands to enable bbswitch!\n Error: {e}")
+
 
 def remove_bbswitch() -> None:
     try:
