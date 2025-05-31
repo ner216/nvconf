@@ -24,20 +24,18 @@ DEFAULT_POWER_STATE = "off"     # Change this to "on" if you would like the nvid
 
 
 def nv_power(state: bool) -> None:
-    # commands to turn on/off the gpu now
-    nv_off_command = "echo OFF > /proc/acpi/bbswitch"
-    nv_on_command = "echo ON > /proc/acpi/bbswitch"
+    # commands to turn on/off the gpu now (Not currently used)
+    # nv_off_command = "echo OFF > /proc/acpi/bbswitch"
+    # nv_on_command = "echo ON > /proc/acpi/bbswitch"
     # commands to turn on/off the gpu at boot
     nv_off_recur_command = "echo 'options bbswitch load_state=0' > /etc/modprobe.d/bbswitch.conf"
     nv_on_recur_command = "echo 'options bbswitch load_state=1' > /etc/modprobe.d/bbswitch.conf"
 
     try:
         if state == True:
-            os.system(nv_on_command)
             os.system(nv_on_recur_command)
             os.system(UPDATE_INITRAMFS_COMMAND)
         elif state == False:
-            os.system(nv_off_command)
             os.system(nv_off_recur_command)
             os.system(UPDATE_INITRAMFS_COMMAND)
         else:
@@ -46,6 +44,8 @@ def nv_power(state: bool) -> None:
     except Exception as e:
         print(f"ERROR: Unable to execute bbswitch command!\n Error: {e}")
         exit()
+
+    print("Successful! changes will take affect after reboot.")
 
 def nv_status() -> None:
     try:
@@ -64,7 +64,7 @@ def setup_bbswitch() -> None:
 
     # Check if bbswitch is installed
     result = subprocess.run(
-        "which bbswitch",
+        "cat /proc/acpi/bbswitch",
         shell=True,
         capture_output=True,
         text=True,
@@ -72,7 +72,8 @@ def setup_bbswitch() -> None:
     )
 
     return_code = result.returncode
-    if return_code != "0":
+    
+    if return_code != 0:
         try:
             print("Installing bbswitch in 3 seconds... CTRL+C to cancel")
             time.sleep(3)
