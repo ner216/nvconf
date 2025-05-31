@@ -72,7 +72,7 @@ def setup_bbswitch() -> None:
     )
 
     return_code = result.returncode
-    if return_code != 0:
+    if return_code != "0":
         try:
             print("Installing bbswitch in 3 seconds... CTRL+C to cancel")
             time.sleep(3)
@@ -84,7 +84,7 @@ def setup_bbswitch() -> None:
 
     # Run commands
     try:
-        print("CREATE: create bbswitch config to /etc/modprobe.d/ ...")
+        print("CREATE: create bbswitch config to /etc/modprobe.d/bbswitch.conf ...")
         os.system(set_config_command)
         print("CREATE: make bbswitch file in /etc/modules-load.d/bbswich to load at boot ...")
         os.system(bbswitch_install_command)
@@ -93,6 +93,20 @@ def setup_bbswitch() -> None:
         print("DONE")
     except Exception as e:
         print(f"ERROR: Unable to execute commands to enable bbswitch!\n Error: {e}")
+
+def remove_bbswitch() -> None:
+    try:
+        print(" --> *nvconf will not uninstall the bbswitch-dkms kernel module.")
+        print("REMOVE: config at /etc/modprod.d/bbswitch.conf ...")
+        os.system("rm -f /etc/modprob.d/bbswitch.conf")
+        print("REMOVE: file at /etc/modules-load.d/bbswitch.conf ...")
+        os.system("rm -f /etc/modules-load.d/bbswitch.conf")
+        print("UPDATE: initramfs ...")
+        os.system(UPDATE_INITRAMFS_COMMAND)
+        print("DONE")
+    except Exception as e:
+        print(f"ERROR: Unable to execute commands to delete config files!\n Error: {e}")
+        exit()
 
 
 def main():
@@ -107,9 +121,10 @@ def main():
     parser.add_argument("--off", action="store_true", help="Turn off the Nvidia GPU")
     parser.add_argument("--setup", action="store_true", help="Setup the bbswitch module to enable at boot")
     parser.add_argument("--status", action="store_true", help="Show if nvidia gpu is on or off")
+    parser.add_argument("--remove-all-configs", action="store_true", help="Remove all configuration files created by nvconf.")
     
     args = parser.parse_args()
-    flags = [args.on, args.off, args.setup, args.status]
+    flags = [args.on, args.off, args.setup, args.status, args.remove_all_configs]
     true_flags = sum(flags)
 
     if true_flags == 1:
@@ -121,6 +136,9 @@ def main():
             setup_bbswitch()
         elif args.status == True:
             nv_status()
+        elif args.remove_all_configs == True:
+            remove_bbswitch()
+        
     else:
         print("Too many arguments given to bbconf!")
         exit()
