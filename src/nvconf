@@ -28,19 +28,20 @@ def nv_power(state: bool) -> None:
     # nv_off_command = "echo OFF > /proc/acpi/bbswitch"
     # nv_on_command = "echo ON > /proc/acpi/bbswitch"
     # Commands to use nvidia-prime to switch profiles (must be switched for bbswitch to work)
-    prime_select_nvidia = "prime-select nvidia"
+    # prime_select_nvidia = "prime-select nvidia"
     prime_select_intel = "prime-select intel"
+    prime_select_on_demand = "prime-select on-demand"
     # commands to turn on/off the gpu at boot
     nv_off_recur_command = "echo 'options bbswitch load_state=0' > /etc/modprobe.d/bbswitch.conf"
     nv_on_recur_command = "echo 'options bbswitch load_state=1' > /etc/modprobe.d/bbswitch.conf"
 
     try:
-        if state == True:
+        if state == "on":
             print(" -> Setting bbswitch ...")
             os.system(nv_on_recur_command)
             print(" -> Running prime-select nvidia ...")
-            os.system(prime_select_nvidia)
-        elif state == False:
+            os.system(prime_select_on_demand)
+        elif state == "off":
             print(" -> Setting bbswitch ...")
             os.system(nv_off_recur_command)
             print(" -> Running prime-select intel ...")
