@@ -36,12 +36,12 @@ def nv_power(state: bool) -> None:
     nv_on_recur_command = "echo 'options bbswitch load_state=1' > /etc/modprobe.d/bbswitch.conf"
 
     try:
-        if state == "on":
+        if state == True:
             print(" -> Setting bbswitch ...")
             os.system(nv_on_recur_command)
             print(" -> Running prime-select nvidia ...")
             os.system(prime_select_on_demand)
-        elif state == "off":
+        elif state == False:
             print(" -> Setting bbswitch ...")
             os.system(nv_off_recur_command)
             print(" -> Running prime-select intel ...")
